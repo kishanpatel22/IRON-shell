@@ -1,21 +1,21 @@
-EXE=shell
+EXE=iron_shell
 
-shell: shell.o command.o command_handler.o buildin.o
-	gcc shell.o command.o command_handler.o buildin.o -o $(EXE)
+iron_shell: iron_shell.o process_command_list.o command_handler.o builtin.o
+	gcc iron_shell.o process_command_list.o command_handler.o builtin.o -o $(EXE)
 
-shell.o : shell.c 
-	gcc -c shell.c 
+iron_shell.o : iron_shell.c 
+	gcc -c iron_shell.c 
 
-command.o : command.c command.h
-	gcc -c command.c 
+process_command_list.o : process_command_list.c process_command_list.h
+	gcc -c process_command_list.c
 
 command_handler.o : command_handler.c command_handler.h 
 	gcc -c command_handler.c 
 
-buildin.o : buildin.c buildin.h
-	gcc -c buildin.c 
+builtin.o : builtin.c builtin.h
+	gcc -c builtin.c 
 
-valgrind: shell
+valgrind: iron_shell
 	valgrind --leak-check=full --show-leak-kinds=all ./$(EXE)
 
 clean:

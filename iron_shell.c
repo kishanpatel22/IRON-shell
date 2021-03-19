@@ -1,26 +1,26 @@
 #include "command_handler.h"
-#include "buildin.h"
-
-#define MAX_DIR_LENGHT (512)
+#include "builtin.h"
 
 
 int main(int argc, char *argv[]) {
     
-    /* holds muliple commands entered as single string */
-    char command_buffer[MAX_COMMAND_LENGHT];
-    char current_working_dir[MAX_DIR_LENGHT];
-    char *home = getenv("HOME");
+    /* holds the commands entered as single string  */
+    char command_buffer[MAX_COMMAND_SIZE];
 
-    /* main loop for the shell prompt */
+    /* the name of the current working directory    */
+    char current_working_dir[MAX_DIR_LENGHT];
+
+    /* main loop for the iron-shell prompt */
     while(1) {
+
         /* shell prompt being logged on screen with every command */
         getcwd(current_working_dir, 512);
         printf("\n%s\n \u2192 ", current_working_dir); 
 
-        if(read_command(command_buffer, MAX_COMMAND_LENGHT) != EOF) {
+        if(read_command(command_buffer, MAX_COMMAND_SIZE) != EOF) {
             /* check if its build in shell command */
-            if(check_buildin_command(command_buffer)) {
-                execute_shell_buildin_command(command_buffer); 
+            if(check_builtin_command(command_buffer)) {
+                execute_shell_builtin_command(command_buffer); 
             } 
             /* if not build in shell command */
             else {

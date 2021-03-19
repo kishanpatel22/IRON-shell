@@ -1,7 +1,11 @@
 #include "command_handler.h"
+#include "process_command_list.h"
 
 /* global variable keeps the track of where next token to be extracted */
 static int parser_index;
+
+/* process control list : list of process executing concurrently for given command */
+static ProcessCommandList pcl;  
 
 /* shell delimiters are pipes, redirects and ampersand */
 const char shell_delimiters[] = {'|', '>', '<', '&'};
@@ -44,6 +48,26 @@ int get_shell_delimiter_state(char shell_delimiter) {
     return INVALID;
 }
 
+/* parses the arguments of given iron shell command                         */
+int command_argument_parser(IronShellCommand *sh_command) {
+
+    /* initialize the number of arguments of the command                    */
+    sh_command->n = 0;
+
+    /* loop through the shell comamnd for parsing arguments                 */
+    char *args = strtok(sh_command->command, COMMAND_ARGUMENT_DELIMITERS);
+    while(args != NULL) {
+        sh_command->arguments[sh_command->n] = args;
+        sh_command->n++;
+        args = strtok(NULL, COMMAND_ARGUMENT_DELIMITERS);
+    }
+
+    /* last argument is NULL (helps in exec)                                */
+    sh_command->arguments[sh_command->n] = NULL;
+
+    return 0;
+}
+
 /* tokenizer : returns the next token */
 int parser(char *token, char *command) {
     int n = strlen(command);
@@ -78,9 +102,16 @@ void command_handler(char *command_token) {
     char token[128];                            /* stores string token */
     char file_name[128];                        /* stores the file name */
     int pfd[2], fd;                             /* stores file descripters */
-    ShellCommand shell_command;                 /* stores shell command */
+    IronShellCommand shell_command;             /* stores shell command */
+    
     int current_state = START, next_state;      /* stores state of FSM */
     int num_process = 0;
+    
+    /* initialize the process control queue */
+    init_process_command_list(&pcl);
+
+    /* enqueue the initial process for executing the whole command */
+    enqueue_process_command(&pcl, command_token, getpid()); 
 
     /* parse until the end of shell command */
     while(current_state != END) {
@@ -94,14 +125,14 @@ void command_handler(char *command_token) {
                     case START:
                         /* extract the command and store the command */
                         strcpy(shell_command.command, token);
-                        argument_parser(&shell_command);
+                        command_argument_parser(&shell_command);
                         break;
                     
                     /* seeing command after pipe before */
                     case PIPE:
                         /* extract the command and store the command */
                         strcpy(shell_command.command, token);
-                        argument_parser(&shell_command);
+                        command_argument_parser(&shell_command);
                         /* close the write end of the pipe */
                         close(pfd[1]);
                         /* duplicate read fd with pipe read end */
@@ -135,11 +166,11 @@ void command_handler(char *command_token) {
                     /* seeing command after & symbol */
                     case NON_BLOCKING_COMMAND:
                         /* execute the previous command and extract then new command */
-                        execute_non_blocking_shell_command(shell_command);
+                        execute_shell_command(shell_command);
                         num_process++;
                         /* extract the command and store the command */
                         strcpy(shell_command.command, token);
-                        argument_parser(&shell_command);
+                        command_argument_parser(&shell_command);
                         break;
                 }
                 break;
@@ -227,11 +258,11 @@ void command_handler(char *command_token) {
                         break;
                     /* execute command such that it's non blocking for shell terminal */
                     case NON_BLOCKING_COMMAND:
-                        execute_non_blocking_shell_command(shell_command);
+                        execute_shell_command(shell_command);
                         exit(errno);
                     /* execute command such that it's blocking for shell terminal */
                     case COMMAND:
-                        execute_non_blocking_shell_command(shell_command);
+                        execute_shell_command(shell_command);
                         num_process++;
                         break;
                 }
@@ -244,15 +275,17 @@ void command_handler(char *command_token) {
     /* wait for all the concurrently running process to get over */
     for(int i = 0; i < num_process; i++) {
         wait(NULL);
-    }    
+    }
+    traverse_process_command_list(pcl);
+    destroy_process_command_list(pcl);
     exit(errno);
 }
 
-
 /* function executes the simple shell command concurrently */
-void execute_blocking_shell_command(ShellCommand shell_command) {
+void execute_shell_command(IronShellCommand shell_command) {
     
-    int pid = fork();
+    pid_t pid = fork();
+    
     /* child process will execute command */
     if(pid == 0) {
         /* TODO : handling misleading shell command how to manage 
@@ -260,34 +293,19 @@ void execute_blocking_shell_command(ShellCommand shell_command) {
          */
         execvp(shell_command.arguments[0], shell_command.arguments);
     } 
-    /* parent process will be blocked ! */
+    /* parent process will be remain unblocked and update the process control list */
     else {
-        wait(NULL);  
-    } 
-}
-
-/* function executes the simple shell command concurrently */
-void execute_non_blocking_shell_command(ShellCommand shell_command) {
-    
-    int pid = fork();
-    /* child process will execute command */
-    if(pid == 0) {
-        /* TODO : handling misleading shell command how to manage 
-         *        synchronization in case of mutiple commands
-         */
-        execvp(shell_command.arguments[0], shell_command.arguments);
-    } 
-    /* parent process will be remain unblocked ! */
-    else {
+        enqueue_process_command(&pcl, shell_command.arguments[0], pid);
         return;
     } 
 }
 
-
 /* function executes the shell command connecting output to pipe */
-void execute_shell_command_with_pipe(ShellCommand shell_command, int pfd[]) {
+void execute_shell_command_with_pipe(IronShellCommand shell_command, 
+                                     int pfd[]) {
     pipe(pfd);
-    int pid = fork();
+    pid_t pid = fork();
+
     if(pid == 0) {
         /* close the read end and duplicate the STDOUT with write end */
         close(pfd[0]);
@@ -297,7 +315,10 @@ void execute_shell_command_with_pipe(ShellCommand shell_command, int pfd[]) {
          */
         execvp(shell_command.arguments[0], shell_command.arguments); 
     } else {
-        /* this makes commands in pipe to execute concurrently */
+        /* this makes commands in pipe to execute concurrently and 
+         * update the process control list 
+         */
+        enqueue_process_command(&pcl, shell_command.arguments[0], pid);
         return;
     }
 }
