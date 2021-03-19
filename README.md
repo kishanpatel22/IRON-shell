@@ -1,56 +1,79 @@
-# Basic Shell 
+# :crossed\_swords: IRON shell
 
-## Building executable 
+* 💻 Shell's are programs which provide **command line interface** to prefrom tasks,
+  or in true sense they invoke execution of other programs. **IRON** here means 
+  **hard/strong**. This Shell inherits alot similar functionality as provided 
+  by many shells in market like bash, zsh. 
+ 
+* 😄 Fun Fact: Windows command prompt is world's most horrible shell program.
+
+## :sunglasses: UNIX Ideaology 
+
+* UNIX is made on basis of writing various programs such that each one of them 
+  can executes, handle and manage **one particular task completely**. In-order 
+  to achieve execution of complicated task, it is broken in sub-task and each
+  sub-task is handled independently by the programs written and execution
+  happens concurrently with each subtask I/O connected using **PIPES**.
+
+* UNIX assumes everthing to be file (there are no drives, even folder/directory 
+  are files !!). The program execution can make use of file for I/O purpose.
+  This is made possible using I/O **REDIRECTION** to files.
+
+## :wrench: Installation Building IRON-shell executable 
+
+* Install for github UI, or by any command line interface with following commands 
+
+```sh
+    $ git clone https://github.com/kishanpatel22/IRON-shell
+    $ cd IRON-shell
+```
 
 * Run the following commands to create the executable file and start the shell
+
 ```sh
     $ make
-    $ ./shell
+    $ ./iron-shell
 ```
-* Can also use make clean to clean all the objects files created by make 
+
+* Tip : use make clean to clean all the objects files created by make 
 
 
-## Build in Shell commands 
+## :package: FEATURES OF IRON-SHELL
 
-* Support to build in shell commands include the following things 
-    + **cd** : command to change the current working directory
-    + **history** : history of commands where executed
-    + **exit** : to exit the shell
+### :eight\_pointed\_black\_star: Build in IRON-Shell commands 
 
-## PIPES, RIDRECTION and BACKGROUND processes
+* Support to build in iron-shell commands include the following things 
+    
+    |  Command    | Significance                                    |
+    |-------------|-------------------------------------------------|
+    | **cd**      | command to change the current working directory |
+    | **history** | history of commands where executed              |
+    | **exit**    | to exit the shell                               |
+    | **fg**      | to run any fore-ground process                  |
+    | **bg**      | run any background process                      |
 
-* Support to unix pipelining, redirection I/O with files and runing process in background.
+* Support to signals for the iron-shell 
+    
+    |  Signal       | Significance                                    |
+    |---------------|-------------------------------------------------|
+    | **control-c** | terminates the currently executing program / process |
+    | **control-z** | suspends the execution of the currently running program / processes |
+    | **control-L** | clear the console screen |
+    | **control-d** | to exit from the iron-shell prompt |
+
+### :eight\_pointed\_black\_star: PIPES, RIDRECTION and SUSPENSION of processes
+
+* Support to unix pipelining, redirection I/O with files and suspension for 
+  processes in iron-shell background.
 
 * Examples for Redirection
 
 ```sh
-    shell-prompt $  ls -l > file.txt    
-    shell-prompt $  cat file.txt
-    total 64
-    -rw-r--r-- 1 kishan kishan 11966 Feb  2 11:50 command_handler.c
-    -rw-r--r-- 1 kishan kishan  2532 Jan 31 21:39 command_handler.h
-    -rw-r--r-- 1 kishan kishan 10632 Feb  2 14:17 command_handler.o
-    -rw------- 1 kishan kishan     0 Feb  2 14:30 file.txt
-    -rw-r--r-- 1 kishan kishan   299 Jan 31 12:45 Makefile
-    -rw-r--r-- 1 kishan kishan   766 Feb  2 14:30 README.md
-    -rwxr-xr-x 1 kishan kishan 13696 Feb  2 14:17 shell
-    -rw-r--r-- 1 kishan kishan  1014 Jan 31 12:45 shell.c
-    -rw-r--r-- 1 kishan kishan  2216 Feb  2 14:17 shell.o
-    -rw-r--r-- 1 kishan kishan  2447 Jan 29 02:04 tags
-    
-    shell-prompt $ grep shell < file.txt
-    -rwxr-xr-x 1 kishan kishan 13696 Feb  2 14:17 shell
-    
-    shell-prompt $ wc < file.txt > temp.txt
-    shell-prompt $ cat temp.txt
-        11  92 578
 ```
 
 * Examples for Pipelining 
 
 ```sh
-    shell-prompt $  ls -l | sort -r | wc
-        10      83     523
 ```
 
 
@@ -58,7 +81,4 @@
 
 ```sh
 ```
-
-
-
 
