@@ -1,13 +1,20 @@
 EXE=iron_shell
 
-iron_shell: iron_shell.o process_command_list.o command_handler.o builtin.o
-	gcc iron_shell.o process_command_list.o command_handler.o builtin.o -o $(EXE)
+iron_shell: main.o iron_shell.o command.o job.o command_handler.o builtin.o
+	gcc main.o iron_shell.o command.o job.o command_handler.o builtin.o -o $(EXE)
+
+main.o: main.c
+	gcc -c main.c 
 
 iron_shell.o : iron_shell.c 
 	gcc -c iron_shell.c 
 
-process_command_list.o : process_command_list.c process_command_list.h
-	gcc -c process_command_list.c
+job.o : job.c job.h
+	gcc -c job.c
+
+
+command.o : command.c
+	gcc -c command.c
 
 command_handler.o : command_handler.c command_handler.h 
 	gcc -c command_handler.c 

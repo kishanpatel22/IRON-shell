@@ -1,5 +1,7 @@
 *.*.un~
 *.un~
 *.txt
-shell
+iron_shell
 tags
+*.o
+

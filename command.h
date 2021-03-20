@@ -32,4 +32,9 @@ typedef struct IronShellCommand {
     int n;                              /* number of iron-shell command args*/
 } IronShellCommand;
 
+int command_argument_parser(IronShellCommand *sh_command);
+
+
+
+
 #endif /* COMMAND_H */

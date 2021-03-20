@@ -1,11 +1,9 @@
 #include "command_handler.h"
-#include "process_command_list.h"
+#include "job.h"
+#include "global.h"
 
 /* global variable keeps the track of where next token to be extracted */
 static int parser_index;
-
-/* process control list : list of process executing concurrently for given command */
-static ProcessCommandList pcl;  
 
 /* shell delimiters are pipes, redirects and ampersand */
 const char shell_delimiters[] = {'|', '>', '<', '&'};
@@ -48,26 +46,6 @@ int get_shell_delimiter_state(char shell_delimiter) {
     return INVALID;
 }
 
-/* parses the arguments of given iron shell command                         */
-int command_argument_parser(IronShellCommand *sh_command) {
-
-    /* initialize the number of arguments of the command                    */
-    sh_command->n = 0;
-
-    /* loop through the shell comamnd for parsing arguments                 */
-    char *args = strtok(sh_command->command, COMMAND_ARGUMENT_DELIMITERS);
-    while(args != NULL) {
-        sh_command->arguments[sh_command->n] = args;
-        sh_command->n++;
-        args = strtok(NULL, COMMAND_ARGUMENT_DELIMITERS);
-    }
-
-    /* last argument is NULL (helps in exec)                                */
-    sh_command->arguments[sh_command->n] = NULL;
-
-    return 0;
-}
-
 /* tokenizer : returns the next token */
 int parser(char *token, char *command) {
     int n = strlen(command);
@@ -106,12 +84,9 @@ void command_handler(char *command_token) {
     
     int current_state = START, next_state;      /* stores state of FSM */
     int num_process = 0;
-    
-    /* initialize the process control queue */
-    init_process_command_list(&pcl);
-
-    /* enqueue the initial process for executing the whole command */
-    enqueue_process_command(&pcl, command_token, getpid()); 
+        
+    init_job(&(iscb.fg_job));
+    add_sub_job(&(iscb.fg_job), command_token, getpid());
 
     /* parse until the end of shell command */
     while(current_state != END) {
@@ -276,8 +251,8 @@ void command_handler(char *command_token) {
     for(int i = 0; i < num_process; i++) {
         wait(NULL);
     }
-    traverse_process_command_list(pcl);
-    destroy_process_command_list(pcl);
+    traverse_job(iscb.fg_job);
+    destroy_job(iscb.fg_job);
     exit(errno);
 }
 
@@ -295,14 +270,13 @@ void execute_shell_command(IronShellCommand shell_command) {
     } 
     /* parent process will be remain unblocked and update the process control list */
     else {
-        enqueue_process_command(&pcl, shell_command.arguments[0], pid);
+        add_sub_job(&(iscb.fg_job), shell_command.arguments[0], pid);
         return;
     } 
 }
 
 /* function executes the shell command connecting output to pipe */
-void execute_shell_command_with_pipe(IronShellCommand shell_command, 
-                                     int pfd[]) {
+void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) {
     pipe(pfd);
     pid_t pid = fork();
 
@@ -318,9 +292,20 @@ void execute_shell_command_with_pipe(IronShellCommand shell_command,
         /* this makes commands in pipe to execute concurrently and 
          * update the process control list 
          */
-        enqueue_process_command(&pcl, shell_command.arguments[0], pid);
+        add_sub_job(&(iscb.fg_job), shell_command.arguments[0], pid);
         return;
     }
+}
+
+/* initializes the signal handlers required for signal handling */
+void init_command_signal_handlers() {
+
+}
+
+
+/* The signal handler for the process executing the process */
+void signal_handler(int signo) {
+    
 }
 
 

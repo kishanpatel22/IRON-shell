@@ -1,52 +1,24 @@
-#include "command_handler.h"
-#include "builtin.h"
+#include "iron_shell.h"
 
-
-int main(int argc, char *argv[]) {
+/* initializes the iron shell control block */
+void init_shell_control_block(IronShellControlBlock *iscb) {
     
-    /* holds the commands entered as single string  */
-    char command_buffer[MAX_COMMAND_SIZE];
+    /* initialize the foreground command running in shell */
+    init_job(&(iscb->fg_job));
 
-    /* the name of the current working directory    */
-    char current_working_dir[MAX_DIR_LENGHT];
-
-    /* main loop for the iron-shell prompt */
-    while(1) {
-
-        /* shell prompt being logged on screen with every command */
-        getcwd(current_working_dir, 512);
-        printf("\n%s\n \u2192 ", current_working_dir); 
-
-        if(read_command(command_buffer, MAX_COMMAND_SIZE) != EOF) {
-            /* check if its build in shell command */
-            if(check_builtin_command(command_buffer)) {
-                execute_shell_builtin_command(command_buffer); 
-            } 
-            /* if not build in shell command */
-            else {
-                int pid = fork();
-                switch(pid) {
-                    /* child process */
-                    case 0:
-                        /* command handler is invoked */
-                        command_handler(command_buffer);
-                        wait(NULL);  
-                        break;
-                    /* can't fork child process */
-                    case -1:
-                        printf("fork failure !\n");
-                        exit(errno);
-                        break;
-                    /* parent process */
-                    default:
-                        wait(0);
-                        break;
-                }
-            }
-        } else {
-            /* exit as user pressed control-D */
-            break;
-        }
-    }
-    return 0;
+    /* execution time of the last command */
+    iscb->execution_time = 0.0;
+    
+    /* history log file                         */
+    strcpy(iscb->history_commands_file, HISTORY_LOG);
+    
+    /* suspended or running list of jobs for the shell */
+    init_job_list(&(iscb->jobs));
 }
+
+/* initializes the job list data structure for suspended or runnning tasks  */
+void init_job_list(IronShellJobList *jobs) {
+    return;
+}
+
+
