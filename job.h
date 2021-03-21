@@ -1,9 +1,10 @@
 #ifndef JOB_H
 #define JOB_H 1
 
+#include <signal.h>
 #include "command.h"
 
-#define MAX_COMMAND_PROCESS_SIZE    (128)
+#define MAX_PROCESS_NAME_SIZE           (128)
 
 /* status of the last command executed on the interface                     */
 enum shell_command_status {NO_COMMAND, RUNNING, SUSPENDED};
@@ -17,7 +18,7 @@ enum shell_command_status {NO_COMMAND, RUNNING, SUSPENDED};
 /* IRON-shell JOB process structure */
 typedef struct IronShellJobProcess {
     
-    char command_name[MAX_COMMAND_PROCESS_SIZE];    /* name of command */
+    char process_name[MAX_PROCESS_NAME_SIZE];       /* name of process */
 
     pid_t pid;                                      /* pid of process associated with command */
 
@@ -31,6 +32,8 @@ typedef struct IronShellJob {
     
     IronShellJobProcess *head, *tail;   /* head and tail of queue */
     
+    char command[MAX_COMMAND_SIZE];     /* the actual command name */
+
     int command_status;                 /* status of the command */
 
     int process_count;                  /* number of process created by single command */
@@ -39,7 +42,7 @@ typedef struct IronShellJob {
 
 
 /* initializes the job list data structure */
-void init_job(IronShellJob *job);
+void init_job(IronShellJob *job, char *command);
 
 /* adds sub job to the exisition job list data structure */
 void add_sub_job(IronShellJob *job, char *command_name, pid_t pid);
@@ -48,8 +51,19 @@ void add_sub_job(IronShellJob *job, char *command_name, pid_t pid);
 void traverse_job(IronShellJob job);
 
 /* destories the job and allocated resources */
-void destroy_job(IronShellJob job);
+void destroy_job(IronShellJob *job);
+
+/* kills the job's running processes and free the allocated resources */
+void kill_job(IronShellJob *job);
+
+/* suspends the job's running processes */
+void suspend_job(IronShellJob *job);
+
+/* resumes the execution of the job */
+void resume_job(IronShellJob *job, int index);
+
+/* logs the message of the job on the console  */
+void print_job(IronShellJob job, int index);
 
 #endif /* JOB_H */
-
 

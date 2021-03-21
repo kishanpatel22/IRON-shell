@@ -1,6 +1,7 @@
 #include "command_handler.h"
 #include "job.h"
 #include "global.h"
+#include "signals.h"
 
 /* global variable keeps the track of where next token to be extracted */
 static int parser_index;
@@ -88,9 +89,14 @@ void command_handler(char *command_token) {
     int current_state = START, next_state;      /* stores state of FSM */
     int num_process = 0;
     
-    init_job(&(iscb.fg_job));
-    
-    save_context();
+    /* initialize the current foreground job */
+    init_job(&(iscb.fg_job), command_token);
+        
+    /* set the appropriate signal handlers */
+    set_signals();
+
+    /* save the context of the file descripters */
+    save_io_context();
 
     /* parse until the end of shell command */
     while(current_state != END) {
@@ -238,6 +244,8 @@ void command_handler(char *command_token) {
                     /* execute command such that it's non blocking for shell terminal */
                     case NON_BLOCKING_COMMAND:
                         execute_shell_command(shell_command);
+                        /* add this command to the currently running jobs in the background */
+                        add_job(&(iscb.jobs), iscb.fg_job);
                         return;
                     /* execute command such that it's blocking for shell terminal */
                     case COMMAND:
@@ -251,16 +259,19 @@ void command_handler(char *command_token) {
         } 
         current_state = next_state;
     }        
- 
+    
     /* wait for all the concurrently running process to get over */
     for(int i = 0; i < num_process; i++) {
-        wait(NULL);
+        /* wait pid waits for any process to changes its state */
+        waitpid(-1, NULL, WUNTRACED);
     }
-
-    restore_context();
     
-    traverse_job(iscb.fg_job);
-    destroy_job(iscb.fg_job);
+    /* restore the context of input output file descripters */
+    restore_io_context();
+
+    /* destroy the job */
+    destroy_job(&(iscb.fg_job));
+    
     return;
 }
 
@@ -271,6 +282,11 @@ void execute_shell_command(IronShellCommand shell_command) {
     
     /* child process will execute command */
     if(pid == 0) {
+
+        /* reset the signal handlers before executing the child process 
+         * thus it executes with the default signal handlers given by kernel
+         */
+        reset_signals();
         execvp(shell_command.arguments[0], shell_command.arguments);
     } 
     /* parent process will be remain unblocked and update the process control list */
@@ -289,6 +305,10 @@ void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) 
         close(pfd[0]);
         dup2(pfd[1], STDOUT_FILENO);
         
+        /* reset the signal handlers before executing the child process 
+         * thus it executes with the default signal handlers given by kernel
+         */
+        reset_signals();
         execvp(shell_command.arguments[0], shell_command.arguments); 
     } else {
         /* this makes commands in pipe to execute concurrently and 
@@ -300,27 +320,15 @@ void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) 
 }
 
 /* saves the current context of the standard file descripters */
-void save_context() {
+void save_io_context() {
     io_context.stdin_fileno  = dup(STDIN_FILENO);
     io_context.stdout_fileno = dup(STDOUT_FILENO);
 }
 
 /* restores the context of the standard IO file descripter */
-void restore_context() {
+void restore_io_context() {
     dup2(io_context.stdin_fileno, STDIN_FILENO); 
     dup2(io_context.stdout_fileno, STDOUT_FILENO); 
-}
-
-
-/* initializes the signal handlers required for signal handling */
-void init_command_signal_handlers() {
-
-}
-
-
-/* The signal handler for the process executing the process */
-void signal_handler(int signo) {
-    
 }
 
 

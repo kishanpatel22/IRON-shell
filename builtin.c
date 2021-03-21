@@ -1,5 +1,6 @@
 #include "builtin.h"
-
+#include "signals.h"
+#include "global.h"
 
 /* check if the command is shell buildin command example
  * 1) cd
@@ -7,6 +8,7 @@
  * 3) exit
  * 4) fg
  * 5) bg
+ * 6) jobs
  * On success returns the true, else false
  */
 
@@ -26,7 +28,13 @@ bool check_builtin_command(char *command_buffer) {
         return true;
     } else if(strcmp(command, EXIT_COMMAND) == 0) {
         return true;
-    } 
+    } else if(strcmp(command, FG_COMMAND) == 0) {
+        return true;
+    } else if(strcmp(command, BG_COMAMND) == 0) {
+        return true;
+    } else if(strcmp(command, JOBS_COMMAND) == 0) {
+        return true;
+    }
     /* its no a shell command */ 
     return false;
 }
@@ -39,7 +47,13 @@ int builtin_shell_command_number(char *command) {
         return HISTORY;
     } else if(strcmp(command, EXIT_COMMAND) == 0) {
         return EXIT;
-    } 
+    } else if(strcmp(command, FG_COMMAND) == 0) {
+        return FG;
+    } else if(strcmp(command, BG_COMAMND) == 0) {
+        return BG;
+    } else if(strcmp(command, JOBS_COMMAND) == 0) {
+        return JOBS;
+    }
     /* its no a shell command */ 
     return -1;
 }
@@ -52,6 +66,15 @@ void execute_shell_builtin_command(char *command) {
     command_argument_parser(&shell_command);
 
     int command_type = builtin_shell_command_number(shell_command.arguments[0]);
+
+    /* set the appropriate signal handlers */
+    set_signals();
+
+    /* save the context of the file descripters */
+    save_io_context();
+    
+    /* initialize the foreground job */
+    init_job(&(iscb.fg_job), "");
 
     switch(command_type) {
 
@@ -69,8 +92,24 @@ void execute_shell_builtin_command(char *command) {
         case HISTORY:
             break;
 
+        /* BG command to run process in background */
+        case BG:
+            resume_job_bg(&(iscb.jobs), 1);
+            break;
+            
+        /* FG command to run process in foreground */
+        case FG:
+            resume_job_fg(&(iscb.jobs), 1, &(iscb.fg_job));
+            break;
+        
+        /* JOBS command to display list of suspended and running processes */
+        case JOBS:
+            print_jobs(iscb.jobs);
+            break;
+
         /* exit command */
         case EXIT:
+            destroy_jobs(&(iscb.jobs));
             /* terminate the program */
             exit(errno);
 
@@ -78,6 +117,19 @@ void execute_shell_builtin_command(char *command) {
         default:
             break;
     }
+    
+    /* wait for all the concurrently running process to get over */
+    for(int i = 0; i < iscb.fg_job.process_count; i++) {
+        /* wait pid waits for any process to changes its state */
+        waitpid(-1, NULL, WUNTRACED);
+    }
+    
+    /* restore the context of input output file descripters */
+    restore_io_context();
+
+    /* destroy the job */
+    destroy_job(&(iscb.fg_job));
+ 
 }
 
 

@@ -8,6 +8,9 @@ int main(int argc, char *argv[]) {
 
     /* the name of the current working directory    */
     char current_working_dir[MAX_DIR_LENGHT];
+    
+    /* initialize the shell control block           */
+    init_shell_control_block(&iscb);
 
     /* main loop for the iron-shell prompt */
     while(1) {
