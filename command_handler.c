@@ -5,6 +5,8 @@
 /* global variable keeps the track of where next token to be extracted */
 static int parser_index;
 
+static IOContext io_context;
+
 /* shell delimiters are pipes, redirects and ampersand */
 const char shell_delimiters[] = {'|', '>', '<', '&'};
 
@@ -82,11 +84,13 @@ void command_handler(char *command_token) {
     int pfd[2], fd;                             /* stores file descripters */
     IronShellCommand shell_command;             /* stores shell command */
     
+    parser_index = 0;
     int current_state = START, next_state;      /* stores state of FSM */
     int num_process = 0;
-        
+    
     init_job(&(iscb.fg_job));
-    add_sub_job(&(iscb.fg_job), command_token, getpid());
+    
+    save_context();
 
     /* parse until the end of shell command */
     while(current_state != END) {
@@ -102,12 +106,12 @@ void command_handler(char *command_token) {
                         strcpy(shell_command.command, token);
                         command_argument_parser(&shell_command);
                         break;
-                    
                     /* seeing command after pipe before */
                     case PIPE:
                         /* extract the command and store the command */
                         strcpy(shell_command.command, token);
                         command_argument_parser(&shell_command);
+                        
                         /* close the write end of the pipe */
                         close(pfd[1]);
                         /* duplicate read fd with pipe read end */
@@ -134,7 +138,7 @@ void command_handler(char *command_token) {
                         if(fd == -1) {
                             eprintf("cannot open file !")
                             exit(errno);            /* TODO : think on handling this case */
-                        } 
+                        }
                         dup2(fd, STDOUT_FILENO);
                         break;
     
@@ -234,7 +238,7 @@ void command_handler(char *command_token) {
                     /* execute command such that it's non blocking for shell terminal */
                     case NON_BLOCKING_COMMAND:
                         execute_shell_command(shell_command);
-                        exit(errno);
+                        return;
                     /* execute command such that it's blocking for shell terminal */
                     case COMMAND:
                         execute_shell_command(shell_command);
@@ -246,14 +250,18 @@ void command_handler(char *command_token) {
                 break;
         } 
         current_state = next_state;
-    }
+    }        
+ 
     /* wait for all the concurrently running process to get over */
     for(int i = 0; i < num_process; i++) {
         wait(NULL);
     }
+
+    restore_context();
+    
     traverse_job(iscb.fg_job);
     destroy_job(iscb.fg_job);
-    exit(errno);
+    return;
 }
 
 /* function executes the simple shell command concurrently */
@@ -263,9 +271,6 @@ void execute_shell_command(IronShellCommand shell_command) {
     
     /* child process will execute command */
     if(pid == 0) {
-        /* TODO : handling misleading shell command how to manage 
-         *        synchronization in case of mutiple commands
-         */
         execvp(shell_command.arguments[0], shell_command.arguments);
     } 
     /* parent process will be remain unblocked and update the process control list */
@@ -279,14 +284,11 @@ void execute_shell_command(IronShellCommand shell_command) {
 void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) {
     pipe(pfd);
     pid_t pid = fork();
-
     if(pid == 0) {
         /* close the read end and duplicate the STDOUT with write end */
         close(pfd[0]);
         dup2(pfd[1], STDOUT_FILENO);
-        /* TODO : handling misleading shell command how to manage 
-         *        synchronization in case of mutiple commands
-         */
+        
         execvp(shell_command.arguments[0], shell_command.arguments); 
     } else {
         /* this makes commands in pipe to execute concurrently and 
@@ -296,6 +298,19 @@ void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) 
         return;
     }
 }
+
+/* saves the current context of the standard file descripters */
+void save_context() {
+    io_context.stdin_fileno  = dup(STDIN_FILENO);
+    io_context.stdout_fileno = dup(STDOUT_FILENO);
+}
+
+/* restores the context of the standard IO file descripter */
+void restore_context() {
+    dup2(io_context.stdin_fileno, STDIN_FILENO); 
+    dup2(io_context.stdout_fileno, STDOUT_FILENO); 
+}
+
 
 /* initializes the signal handlers required for signal handling */
 void init_command_signal_handlers() {

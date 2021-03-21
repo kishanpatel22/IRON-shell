@@ -14,6 +14,11 @@
 
 #define INVALID                         (-1)
 
+typedef struct IOContext {
+    int stdout_fileno, stdin_fileno;
+} IOContext;
+
+
 /* parser for shell command arguments                                       */
 int command_argument_parser(IronShellCommand *sh_command);
 
@@ -39,5 +44,13 @@ void execute_shell_command(IronShellCommand shell_command);
 
 /* function executes the iron shell command connecting to a pipe            */
 void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]);
+
+/* saves the current context of the standard file descripters */
+void save_context();
+
+/* restores the context of the standard IO file descripter */
+void restore_context();
+
+
 
 #endif /* COMMAND_HANDLER_H */

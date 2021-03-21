@@ -23,24 +23,8 @@ int main(int argc, char *argv[]) {
             } 
             /* if not build in shell command */
             else {
-                int pid = fork();
-                switch(pid) {
-                    /* child process */
-                    case 0:
-                        /* command handler is invoked */
-                        command_handler(command_buffer);
-                        wait(NULL);  
-                        break;
-                    /* can't fork child process */
-                    case -1:
-                        printf("fork failure !\n");
-                        exit(errno);
-                        break;
-                    /* parent process */
-                    default:
-                        wait(0);
-                        break;
-                }
+                /* command handler handles the execution of the user commmand */
+                command_handler(command_buffer);
             }
         } else {
             /* exit as user pressed control-D */
