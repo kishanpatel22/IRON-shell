@@ -100,6 +100,16 @@ void execute_shell_builtin_command(char *command) {
         /* FG command to run process in foreground */
         case FG:
             resume_job_fg(&(iscb.jobs), 1, &(iscb.fg_job));
+            
+            /* wait for all the concurrently running process to get over */
+            for(int i = 0; i < iscb.fg_job.process_count; i++) {
+                /* wait pid waits for any process to changes its state */
+                waitpid(-1, NULL, WUNTRACED);
+            }
+            
+            /* destroy the job */
+            destroy_job(&(iscb.fg_job));
+
             break;
         
         /* JOBS command to display list of suspended and running processes */
@@ -117,19 +127,13 @@ void execute_shell_builtin_command(char *command) {
         default:
             break;
     }
-    
-    /* wait for all the concurrently running process to get over */
-    for(int i = 0; i < iscb.fg_job.process_count; i++) {
-        /* wait pid waits for any process to changes its state */
-        waitpid(-1, NULL, WUNTRACED);
-    }
-    
+        
     /* restore the context of input output file descripters */
     restore_io_context();
 
-    /* destroy the job */
-    destroy_job(&(iscb.fg_job));
- 
+    /* reset the original signals handlers */
+    reset_signals();
+
 }
 
 

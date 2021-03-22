@@ -1,6 +1,9 @@
 #ifndef SIGNALS_H
 #define SIGNALS_H 1
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 /* adds the user defined signals  */
 void set_signals();
 

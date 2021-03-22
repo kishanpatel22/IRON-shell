@@ -2,12 +2,13 @@
 #define JOB_H 1
 
 #include <signal.h>
+#include <stdbool.h>
 #include "command.h"
 
 #define MAX_PROCESS_NAME_SIZE           (128)
 
 /* status of the last command executed on the interface                     */
-enum shell_command_status {NO_COMMAND, RUNNING, SUSPENDED};
+enum shell_command_status {NO_COMMAND, RUNNING, STOPPED};
 
 
 /* The module provides implementation details related to the IRON-shell JOB
@@ -64,6 +65,9 @@ void resume_job(IronShellJob *job, int index);
 
 /* logs the message of the job on the console  */
 void print_job(IronShellJob job, int index);
+
+/* deletes a sub job process with given pid */
+bool delete_sub_job(IronShellJob *jobs, pid_t pid, int index);
 
 #endif /* JOB_H */
 

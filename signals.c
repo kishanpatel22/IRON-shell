@@ -24,6 +24,20 @@ void signal_handler(int signo) {
         /* initialize the job again for new foreground job in shell     */
         init_job(&(iscb.fg_job), "");
         
+    } 
+
+    /* SIGCHILD will inform the shell about the completion of the child process 
+     * the shell will free the dynamically allocated resource regarding 
+     * particular process which was part of the job
+     */
+    else if(signo == SIGCHLD) {
+        pid_t pid = waitpid(-1, 0, WNOHANG);
+
+        if(pid == -1 || pid == 0) {
+            return;
+        }
+        /* delete the job with the given pid */
+        delete_job(&(iscb.jobs), pid);
     }
 
     return;
@@ -33,11 +47,13 @@ void signal_handler(int signo) {
 void set_signals() {
     signal(SIGINT, signal_handler); 
     signal(SIGTSTP, signal_handler); 
+    signal(SIGCHLD, signal_handler); 
 }
 
 /* reset to default signals */
 void reset_signals() {
     signal(SIGINT, SIG_DFL);
     signal(SIGSTOP, SIG_DFL);
+    signal(SIGCHLD, signal_handler); 
 }
 

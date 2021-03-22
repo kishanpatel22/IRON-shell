@@ -70,6 +70,10 @@ void destroy_jobs(IronShellJobList *jobs);
 /* returns true if there no jobs present in background */
 bool no_jobs(IronShellJobList jobs);
 
+/* delelte the job having the given pid */
+bool delete_job(IronShellJobList *jobs, pid_t pid);
+
+
 #endif /* IRON_SHELL_H */
 
 

@@ -75,7 +75,7 @@ void kill_job(IronShellJob *job) {
  */
 void suspend_job(IronShellJob *job) {
     IronShellJobProcess *ptr = job->head;
-    job->command_status = SUSPENDED;
+    job->command_status = STOPPED;
     while(ptr != NULL) {
         kill(ptr->pid, SIGSTOP);
         ptr = ptr->next;
@@ -102,28 +102,52 @@ void resume_job(IronShellJob *job, int index) {
     return;
 }
 
-
+/* logs the message on the prompt regarding the job which is stopped or running
+ */
 void print_job(IronShellJob job, int index) {
     IronShellJobProcess *ptr = job.head;
     if(ptr == NULL) {
-        eprintf("suspended job without any processes\n");
+        eprintf("stopped job without any processes\n");
     }
-    if(job.command_status == SUSPENDED) {
-        printf("\n [%d]\t+ %d suspended\t%s\n", index, ptr->pid, ptr->process_name);
+    if(job.command_status == STOPPED) {
+        printf("\n [%d]\t+ %d stopped\t%s\n", index, ptr->pid, ptr->process_name);
     } else {
-        printf("\n [%d]\t- %d running  \t%s\n", index, ptr->pid, ptr->process_name);
+        printf("\n [%d]\t- %d running\t%s\n", index, ptr->pid, ptr->process_name);
     }
     ptr = ptr->next;
     while(ptr != NULL) {
-        if(job.command_status == SUSPENDED) {
-            printf("     \t+ %d suspended\t%s\n", ptr->pid, ptr->process_name);
+        if(job.command_status == STOPPED) {
+            printf("     \t+ %d stopped\t%s\n", ptr->pid, ptr->process_name);
         } else {
-            printf("     \t- %d running  \t%s\n", ptr->pid, ptr->process_name);
+            printf("     \t- %d running\t%s\n", ptr->pid, ptr->process_name);
         }
         ptr = ptr->next;
     }
     return;
 }
 
+/* deletes a sub job process with given pid                                 */
+bool delete_sub_job(IronShellJob *jobs, pid_t pid, int index) {
+    IronShellJobProcess *ptr = jobs->head, *temp = NULL;
+    while(ptr != NULL) {
+        if(ptr->pid == pid) {
+            /* you need to delete this particular node from the list */ 
+            if(temp == NULL) {
+                jobs->head = ptr->next;
+                if(jobs->head == NULL) {
+                    jobs->tail = NULL;
+                }
+            } else {
+                temp->next = ptr->next;
+            }
+            printf("\n [%d]  +  Done  %s\n", index, ptr->process_name); 
+            free(ptr);
+            return true;
+        } 
+        temp = ptr;
+        ptr = ptr->next;
+    }
+    return false;
+}
 
 

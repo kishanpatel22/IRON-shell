@@ -29,7 +29,6 @@ void add_job(IronShellJobList *jobs, IronShellJob job) {
     IronShellJobNode *new_job_node = (IronShellJobNode *)malloc(sizeof(IronShellJobNode));
     if(new_job_node == NULL) {
         eprintf("malloc failed\n"); 
-        exit(1);
     }
     new_job_node->job = job;
     new_job_node->next = NULL;
@@ -45,6 +44,7 @@ void add_job(IronShellJobList *jobs, IronShellJob job) {
     jobs->count_jobs++;
     return;
 }
+
 
 /* resumes job in foreground */
 void resume_job_fg(IronShellJobList *jobs, int index, IronShellJob *job) {
@@ -65,8 +65,7 @@ void resume_job_fg(IronShellJobList *jobs, int index, IronShellJob *job) {
     /* job which is suspended is made to start again in foreground 
      * note is process is already running in background then just wait
      */
-    if(ptr->job.command_status == SUSPENDED) {
-        print_job(ptr->job, index);
+    if(ptr->job.command_status == STOPPED) {
         resume_job(&(ptr->job), index);
     }
     *job = ptr->job;
@@ -83,6 +82,7 @@ void resume_job_fg(IronShellJobList *jobs, int index, IronShellJob *job) {
     jobs->count_jobs--;
     return;
 }
+
 
 /* resumes job in background */
 void resume_job_bg(IronShellJobList *jobs, int index) {
@@ -104,7 +104,6 @@ void resume_job_bg(IronShellJobList *jobs, int index) {
         printf("iron-shell : the process is already running in background\n");
         return;
     } else {
-        print_job(ptr->job, index);
         resume_job(&(ptr->job), index);
     }
     return;
@@ -125,6 +124,7 @@ void print_jobs(IronShellJobList jobs) {
     }
 }
 
+
 /* destory all the jobs which are currently active */
 void destroy_jobs(IronShellJobList *jobs) {
     IronShellJobNode *ptr = jobs->head, *temp;
@@ -139,6 +139,7 @@ void destroy_jobs(IronShellJobList *jobs) {
     return;
 }
 
+
 /* returns true if there are no jobs suspended or running */
 bool no_jobs(IronShellJobList jobs) {
     if(jobs.head == NULL && jobs.tail == NULL) {
@@ -147,4 +148,30 @@ bool no_jobs(IronShellJobList jobs) {
     return false;
 }
 
-
+/* delelte the job having the given pid */
+bool delete_job(IronShellJobList *jobs, pid_t pid) {
+    IronShellJobNode *ptr = jobs->head, *temp = NULL;
+    int index = 1;
+    while(ptr != NULL) {
+        if(delete_sub_job(&(ptr->job), pid, index)) {
+            /* now check if the given process is completely done
+             * thus free the allocated memory to data structure 
+             */
+            if(ptr->job.head == NULL) {
+                if(temp == NULL) {
+                    jobs->head = ptr->next;
+                    if(jobs->head == NULL) {
+                        jobs->tail = NULL;
+                    }
+                } else {
+                    temp->next = ptr->next; 
+                }
+                free(ptr);
+            } 
+        }  
+        temp = ptr;
+        ptr = ptr->next;
+        index++;
+    }
+    return false;
+}

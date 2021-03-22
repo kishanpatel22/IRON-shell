@@ -246,6 +246,8 @@ void command_handler(char *command_token) {
                         execute_shell_command(shell_command);
                         /* add this command to the currently running jobs in the background */
                         add_job(&(iscb.jobs), iscb.fg_job);
+                        /* initialize the foreground job as empty */
+                        init_job(&(iscb.fg_job), "");
                         return;
                     /* execute command such that it's blocking for shell terminal */
                     case COMMAND:
@@ -265,15 +267,19 @@ void command_handler(char *command_token) {
         /* wait pid waits for any process to changes its state */
         waitpid(-1, NULL, WUNTRACED);
     }
-    
+
     /* restore the context of input output file descripters */
     restore_io_context();
-
-    /* destroy the job */
-    destroy_job(&(iscb.fg_job));
     
+    /* reset the original signals handlers */
+    reset_signals();
+    
+    /* destroy the resource for foreground process which was running */
+    destroy_job(&(iscb.fg_job));
+
     return;
 }
+
 
 /* function executes the simple shell command concurrently */
 void execute_shell_command(IronShellCommand shell_command) {
@@ -295,6 +301,7 @@ void execute_shell_command(IronShellCommand shell_command) {
         return;
     } 
 }
+
 
 /* function executes the shell command connecting output to pipe */
 void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) {
