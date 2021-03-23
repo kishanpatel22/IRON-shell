@@ -41,9 +41,8 @@
 ## :dart: Example regarding the features and usage 
 
 * The video contains a small demo of how to user the command line interface 
-
-[![asciicast](https://asciinema.org/a/RsK0cjGbSqPZumDU8eFeOgGFa)](https://asciinema.org/a/RsK0cjGbSqPZumDU8eFeOgGFa)
-
+    
+    [![asciicast](https://asciinema.org/a/401781.svg)](https://asciinema.org/a/401781)
 
 ## :package: FEATURES OF IRON-SHELL
 
