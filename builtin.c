@@ -1,5 +1,4 @@
 #include "builtin.h"
-#include "signals.h"
 #include "global.h"
 
 /* check if the command is shell buildin command example
@@ -61,6 +60,7 @@ int builtin_shell_command_number(char *command) {
 /* executes the shell buildin comamnd */
 void execute_shell_builtin_command(char *command) {
     
+    char cwd[512];
     IronShellCommand shell_command;
     strcpy(shell_command.command, command);
     command_argument_parser(&shell_command);
@@ -70,9 +70,6 @@ void execute_shell_builtin_command(char *command) {
     /* set the appropriate signal handlers */
     set_signals();
 
-    /* save the context of the file descripters */
-    save_io_context();
-    
     /* initialize the foreground job */
     init_job(&(iscb.fg_job), "");
 
@@ -80,11 +77,21 @@ void execute_shell_builtin_command(char *command) {
 
         /* change the directory */
         case CHANGE_DIR:
+            /* store the current working directory */
+            getcwd(cwd, 512);
             /* more than two arguments to cd is not permissible */
-            if(shell_command.arguments[2] != NULL) {
-                builtin_error("cd : too many arguments !\n");
+            if(shell_command.n > 2) {
+                PRINT_EXECPTION("cd : too many arguments !");
+                return;
+            } else if(shell_command.arguments[1] == NULL) {
+                chdir(HOME_DIR);
+                strcpy(iscb.pwd, cwd);
+            } else if(strcmp(shell_command.arguments[1], "-") == 0) {
+                chdir(iscb.pwd);
+                strcpy(iscb.pwd, cwd);
             } else if(chdir(shell_command.arguments[1]) == -1) {
-                builtin_error("cd : No such file or directory !\n");
+                PRINT_EXECPTION("cd : No such file or directory !\n");
+                return;
             }
             break;
 
@@ -94,12 +101,28 @@ void execute_shell_builtin_command(char *command) {
 
         /* BG command to run process in background */
         case BG:
-            resume_job_bg(&(iscb.jobs), 1);
+            if(shell_command.n > 2) {
+                PRINT_EXECPTION("bg works with only index numbers of jobs");
+                break;
+            } else if(shell_command.n == 2) {
+                resume_job_bg(&(iscb.jobs), atoi(shell_command.arguments[1]));
+                return;
+            } else {
+                resume_job_bg(&(iscb.jobs), 1);
+                return;
+            }
             break;
             
         /* FG command to run process in foreground */
         case FG:
-            resume_job_fg(&(iscb.jobs), 1, &(iscb.fg_job));
+            if(shell_command.n > 2) {
+                PRINT_EXECPTION("fg works with only index numbers of jobs");
+                break;
+            } else if(shell_command.n == 2) {
+                resume_job_fg(&(iscb.jobs), atoi(shell_command.arguments[1]), &(iscb.fg_job));
+            } else {
+                resume_job_fg(&(iscb.jobs), 1, &(iscb.fg_job));
+            }
             
             /* wait for all the concurrently running process to get over */
             for(int i = 0; i < iscb.fg_job.process_count; i++) {
@@ -128,12 +151,8 @@ void execute_shell_builtin_command(char *command) {
             break;
     }
         
-    /* restore the context of input output file descripters */
-    restore_io_context();
-
     /* reset the original signals handlers */
     reset_signals();
-
 }
 
 

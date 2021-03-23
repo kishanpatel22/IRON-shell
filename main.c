@@ -1,4 +1,3 @@
-#include "iron_shell.h"
 #include "global.h"
 
 int main(int argc, char *argv[]) {
@@ -9,15 +8,15 @@ int main(int argc, char *argv[]) {
     /* the name of the current working directory    */
     char current_working_dir[MAX_DIR_LENGHT];
     
-    /* initialize the shell control block           */
+    /* initialize the iron shell control block      */
     init_shell_control_block(&iscb);
 
-    /* main loop for the iron-shell prompt */
+    /* main loop for the iron-shell prompt          */
     while(1) {
 
         /* shell prompt being logged on screen with every command */
         getcwd(current_working_dir, 512);
-        printf("\n%s\n \u2192 ", current_working_dir); 
+        PRINT_PROMPT(current_working_dir);
 
         if(read_command(command_buffer, MAX_COMMAND_SIZE) != EOF) {
             /* check if its build in shell command */

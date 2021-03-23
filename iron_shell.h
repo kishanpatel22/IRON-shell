@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #include "command_handler.h"
+#include "signals.h"
 #include "builtin.h"
 #include "job.h"
 
@@ -43,6 +44,8 @@ typedef struct IronShellControlBlock {
     
     IronShellJobList jobs;              /* list of currently suspened and runing jobs */
     
+    char pwd[128];                      /* previous working directory */
+
 } IronShellControlBlock;
 
 

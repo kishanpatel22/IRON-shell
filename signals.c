@@ -50,10 +50,12 @@ void set_signals() {
     signal(SIGCHLD, signal_handler); 
 }
 
+
 /* reset to default signals */
 void reset_signals() {
     signal(SIGINT, SIG_DFL);
     signal(SIGSTOP, SIG_DFL);
     signal(SIGCHLD, signal_handler); 
 }
+
 

@@ -15,7 +15,7 @@ void add_sub_job(IronShellJob *job, char *command_name, pid_t pid) {
     IronShellJobProcess *new_sub_job = 
         (IronShellJobProcess *)malloc(sizeof(IronShellJobProcess));
     if(new_sub_job == NULL) {
-        eprintf("malloc failed\n"); 
+        PRINT_ERR("malloc failed");
     }
     strcpy(new_sub_job->process_name, command_name);
     new_sub_job->pid = pid;
@@ -75,11 +75,11 @@ void kill_job(IronShellJob *job) {
  */
 void suspend_job(IronShellJob *job) {
     IronShellJobProcess *ptr = job->head;
-    job->command_status = STOPPED;
     while(ptr != NULL) {
         kill(ptr->pid, SIGSTOP);
         ptr = ptr->next;
     }
+    job->command_status = STOPPED;
     print_job(*job, iscb.jobs.count_jobs + 1);
     return;
 }
@@ -90,7 +90,7 @@ void suspend_job(IronShellJob *job) {
 void resume_job(IronShellJob *job, int index) {
     IronShellJobProcess *ptr = job->head;
     if(ptr == NULL) {
-        printf("iron-shell : no process assicated with the job\n");
+        PRINT_EXECPTION("job has no associated processes");
         return;
     } 
     while(ptr != NULL) {
@@ -107,19 +107,20 @@ void resume_job(IronShellJob *job, int index) {
 void print_job(IronShellJob job, int index) {
     IronShellJobProcess *ptr = job.head;
     if(ptr == NULL) {
-        eprintf("stopped job without any processes\n");
+        PRINT_EXECPTION("job has no associated processes");
+        return;
     }
     if(job.command_status == STOPPED) {
-        printf("\n [%d]\t+ %d stopped\t%s\n", index, ptr->pid, ptr->process_name);
+        PRINT_JOB_PROCESS_HEAD(index, ptr->pid, ptr->process_name, "stopped");
     } else {
-        printf("\n [%d]\t- %d running\t%s\n", index, ptr->pid, ptr->process_name);
+        PRINT_JOB_PROCESS_HEAD(index, ptr->pid, ptr->process_name, "running");
     }
     ptr = ptr->next;
     while(ptr != NULL) {
         if(job.command_status == STOPPED) {
-            printf("     \t+ %d stopped\t%s\n", ptr->pid, ptr->process_name);
+            PRINT_JOB_PROCESS_NODE(ptr->pid, ptr->process_name, "stopped");
         } else {
-            printf("     \t- %d running\t%s\n", ptr->pid, ptr->process_name);
+            PRINT_JOB_PROCESS_NODE(ptr->pid, ptr->process_name, "running");
         }
         ptr = ptr->next;
     }
@@ -140,8 +141,9 @@ bool delete_sub_job(IronShellJob *jobs, pid_t pid, int index) {
             } else {
                 temp->next = ptr->next;
             }
-            printf("\n [%d]  +  Done  %s\n", index, ptr->process_name); 
+            PRINT_JOB_DONE(index, pid, ptr->process_name);
             free(ptr);
+            jobs->process_count--;
             return true;
         } 
         temp = ptr;
@@ -149,5 +151,4 @@ bool delete_sub_job(IronShellJob *jobs, pid_t pid, int index) {
     }
     return false;
 }
-
 

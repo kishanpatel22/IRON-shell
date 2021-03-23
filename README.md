@@ -47,7 +47,6 @@
     |  Command    | Significance                                    |
     |-------------|-------------------------------------------------|
     | **cd**      | command to change the current working directory |
-    | **history** | history of commands where executed              |
     | **exit**    | to exit the shell                               |
     | **fg**      | to run any fore-ground process                  |
     | **bg**      | run any background process                      |
@@ -58,7 +57,6 @@
     |---------------|-------------------------------------------------|
     | **control-c** | terminates the currently executing program / process |
     | **control-z** | suspends the execution of the currently running program / processes |
-    | **control-L** | clear the console screen |
     | **control-d** | to exit from the iron-shell prompt |
 
 ### :eight\_pointed\_black\_star: PIPES, RIDRECTION and SUSPENSION of processes
@@ -69,6 +67,8 @@
 * Examples for Redirection
 
 ```sh
+      
+
 ```
 
 * Examples for Pipelining 

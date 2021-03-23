@@ -4,6 +4,8 @@
 /* initializes the iron shell control block */
 void init_shell_control_block(IronShellControlBlock *iscb) {
     
+    char cwd[512];
+
     /* initialize the foreground command running in shell */
     init_job(&(iscb->fg_job), "");
 
@@ -15,6 +17,11 @@ void init_shell_control_block(IronShellControlBlock *iscb) {
     
     /* suspended or running list of jobs for the shell */
     init_job_list(&(iscb->jobs));
+    
+    /* default previous directory is the home directory */
+    getcwd(cwd, 512);
+    strcpy(iscb->pwd, cwd);
+
 }
 
 /* initializes the job list data structure for suspended or runnning tasks  */
@@ -28,7 +35,7 @@ void init_job_list(IronShellJobList *jobs) {
 void add_job(IronShellJobList *jobs, IronShellJob job) {
     IronShellJobNode *new_job_node = (IronShellJobNode *)malloc(sizeof(IronShellJobNode));
     if(new_job_node == NULL) {
-        eprintf("malloc failed\n"); 
+        PRINT_ERR("malloc failed"); 
     }
     new_job_node->job = job;
     new_job_node->next = NULL;
@@ -49,7 +56,7 @@ void add_job(IronShellJobList *jobs, IronShellJob job) {
 /* resumes job in foreground */
 void resume_job_fg(IronShellJobList *jobs, int index, IronShellJob *job) {
     if(no_jobs(*jobs)) {
-        printf("iron-shell : no foreground jobs present\n"); 
+        PRINT_EXECPTION("no foreground jobs present"); 
         return;
     } 
     IronShellJobNode* ptr = jobs->head, *temp = NULL;
@@ -59,15 +66,13 @@ void resume_job_fg(IronShellJobList *jobs, int index, IronShellJob *job) {
         index--;
     }
     if(ptr == NULL) {
-        printf("iron-shell : no foreground jobs for given argument \n");
+        PRINT_EXECPTION("no foreground jobs for given argument");
         return;
     }
-    /* job which is suspended is made to start again in foreground 
-     * note is process is already running in background then just wait
+
+    /* job which is made to start in foreground if it was stopped
      */
-    if(ptr->job.command_status == STOPPED) {
-        resume_job(&(ptr->job), index);
-    }
+    resume_job(&(ptr->job), index);
     *job = ptr->job;
 
     /* delete the node from the job list */
@@ -87,7 +92,7 @@ void resume_job_fg(IronShellJobList *jobs, int index, IronShellJob *job) {
 /* resumes job in background */
 void resume_job_bg(IronShellJobList *jobs, int index) {
     if(no_jobs(*jobs)) {
-        printf("iron-shell : no background jobs present\n");
+        PRINT_EXECPTION("no background jobs present");
         return;
     }
     IronShellJobNode* ptr = jobs->head;
@@ -96,12 +101,12 @@ void resume_job_bg(IronShellJobList *jobs, int index) {
         index--;
     }
     if(ptr == NULL) {
-        printf("iron-shell : no background jobs for given argument \n");
+        PRINT_EXECPTION("no background jobs for given argument");
         return;
     }
     /* there is not change in the data structure */
     if(ptr->job.command_status == RUNNING) {
-        printf("iron-shell : the process is already running in background\n");
+        PRINT_EXECPTION("process is already running in background");
         return;
     } else {
         resume_job(&(ptr->job), index);
@@ -114,7 +119,7 @@ void resume_job_bg(IronShellJobList *jobs, int index) {
 void print_jobs(IronShellJobList jobs) {
     IronShellJobNode *ptr = jobs.head;
     if(ptr == NULL) {
-        printf("iron-shell : no suspeneded or stopped jobs\n");
+        PRINT_EXECPTION("no suspeneded or stopped jobs");
         return;
     }
     int i = 1;
@@ -167,6 +172,7 @@ bool delete_job(IronShellJobList *jobs, pid_t pid) {
                     temp->next = ptr->next; 
                 }
                 free(ptr);
+                jobs->count_jobs--;
             } 
         }  
         temp = ptr;
@@ -175,3 +181,4 @@ bool delete_job(IronShellJobList *jobs, pid_t pid) {
     }
     return false;
 }
+

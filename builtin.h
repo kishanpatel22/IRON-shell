@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <pwd.h>
 #include <stdlib.h>
 
 #include "command.h"
@@ -13,11 +14,6 @@
 /* Module provides basic functionalities that are provided by iron-shell 
  * which include changing directories, history executed and exiting iron-shell
  */
-
-/* logs for iron-shell error message                                        */
-#define builtin_error(msg, ...)                                     \
-    fprintf(stderr,"IRON-shell error : " msg)                       \
-
 
 #define CD_COMMAND              "cd"
 #define HISTORY_COMMAND         "history"
@@ -34,6 +30,8 @@
 #define BG                      (5)
 #define JOBS                    (6)
 
+
+#define HOME_DIR                getenv("HOME")
 
 /* maximum length of the directory                                          */
 #define MAX_DIR_LENGHT          (512)

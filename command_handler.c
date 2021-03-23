@@ -130,8 +130,7 @@ void command_handler(char *command_token) {
                         strcpy(file_name, strtok(token, " "));
                         fd = open(file_name, O_RDONLY);
                         if(fd == -1) {
-                            eprintf("cannot open file !")
-                            exit(errno);            /* TODO : think on handling this case */
+                            PRINT_ERR("cannot open file !");
                         }
                         dup2(fd, STDIN_FILENO);
                         break;
@@ -142,8 +141,7 @@ void command_handler(char *command_token) {
                         strcpy(file_name, strtok(token, " "));
                         fd = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
                         if(fd == -1) {
-                            eprintf("cannot open file !")
-                            exit(errno);            /* TODO : think on handling this case */
+                            PRINT_ERR("cannot open file !");
                         }
                         dup2(fd, STDOUT_FILENO);
                         break;
@@ -172,55 +170,55 @@ void command_handler(char *command_token) {
 
                     /* malicious user : need learn how write shell commands */
                     case INPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
 
                     /* malicious user : need learn how write shell commands */
                     case OUTPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
 
                     /* malicious user : need learn how write shell commands */
                     case START:
-                        eprintf("syntax error near unexpected token `|'");
+                        PRINT_ERR("syntax error near unexpected token `|'");
                         break;
                 }
                 break;
             case INPUT_REDIRECT: 
                 switch(current_state) {
                     case PIPE:
-                        eprintf("syntax error near unexpected token `|'");
+                        PRINT_ERR("syntax error near unexpected token `|'");
                         break;
                     case START:
-                        eprintf("syntax error near unexpected token `|'");
+                        PRINT_ERR("syntax error near unexpected token `|'");
                         break;
                     case OUTPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `|'");
+                        PRINT_ERR("syntax error near unexpected token `|'");
                 }
                 break;
             case OUTPUT_REDIRECT: 
                 switch(current_state) {
                     case PIPE:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                     case START:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                     case INPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                 }
                 break;
             case NON_BLOCKING_COMMAND:
                 switch(current_state) {
                     case START:
-                        eprintf("syntax error near unexpected token `|'");
+                        PRINT_ERR("syntax error near unexpected token `|'");
                         break; 
                     case PIPE:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                     case INPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                 }
                 break;
@@ -231,15 +229,15 @@ void command_handler(char *command_token) {
                         break;
                     /* malicious user : need learn how write shell commands */
                     case PIPE:
-                        eprintf("syntax error near unexpected token `|'");
+                        PRINT_ERR("syntax error near unexpected token `|'");
                         break;
                     /* malicious user : need learn how write shell commands */
                     case INPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                     /* malicious user : need learn how write shell commands */
                     case OUTPUT_REDIRECT:
-                        eprintf("syntax error near unexpected token `newline'");
+                        PRINT_ERR("syntax error near unexpected token `newline'");
                         break;
                     /* execute command such that it's non blocking for shell terminal */
                     case NON_BLOCKING_COMMAND:
@@ -294,6 +292,7 @@ void execute_shell_command(IronShellCommand shell_command) {
          */
         reset_signals();
         execvp(shell_command.arguments[0], shell_command.arguments);
+        PRINT_ERR("execvp failed");
     } 
     /* parent process will be remain unblocked and update the process control list */
     else {
@@ -317,6 +316,7 @@ void execute_shell_command_with_pipe(IronShellCommand shell_command, int pfd[]) 
          */
         reset_signals();
         execvp(shell_command.arguments[0], shell_command.arguments); 
+        PRINT_ERR("execvp failed");
     } else {
         /* this makes commands in pipe to execute concurrently and 
          * update the process control list 

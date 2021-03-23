@@ -12,18 +12,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "log.h"
+
 /* command argument delimiters                                              */
 #define COMMAND_ARGUMENT_DELIMITERS     " "
 
 #define MAX_COMMAND_SIZE                (1024)
 #define MAX_ARGS                        (16)
-
-/* print the error message on the terminal */
-#define eprintf(msg, ...)                                           \
-    fprintf(stderr,"shell error : " msg                             \
-            "\nfile = %s, line number = %d, in function = %s()\n"   \
-            ##__VA_ARGS__, __FILE__, __LINE__, __func__);           \
-    exit(errno);                                                    \
 
 /* IRON-shell command structure                                             */
 typedef struct IronShellCommand {
@@ -33,7 +28,6 @@ typedef struct IronShellCommand {
 } IronShellCommand;
 
 int command_argument_parser(IronShellCommand *sh_command);
-
 
 
 
