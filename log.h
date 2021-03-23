@@ -3,7 +3,7 @@
 
 /* prints the prompt on console             */
 #define PRINT_PROMPT(curr_dir)                                      \
-        printf("\n%s\n ISHELL > ", curr_dir);                       \
+        printf("\n%s\n ISHELL >> ", curr_dir);                      \
 
 /* print the error message on the terminal  
  * advisible to use in case of fork and exec
@@ -17,7 +17,7 @@
 
 /* prints the exeption message on the shell */
 #define PRINT_EXECPTION(msg)                                        \
-    fprintf(stderr, "IRON-shell :" msg "\n")
+    fprintf(stderr, "IRON-shell : " msg "\n")
 
 
 /* prints the head of the jobs */

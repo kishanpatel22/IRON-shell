@@ -18,6 +18,11 @@ int read_command(char *command_token, int max_command_length) {
         command_token[i++] = ch;
     }
     command_token[i] = '\0';
+    /* comments are by default ignored */
+    if(i > 0 && command_token[0] == '#') {
+        command_token[0] = '\0';
+        return 0;
+    }
     return i == 0 && ch == EOF ? -1 : i;
 }
 
